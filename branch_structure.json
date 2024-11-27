@@ -1,0 +1,21 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "develop",
+    "main",
+    "origin",
+    "sign-up"
+  ],
+  "parent": {
+    "develop": "main",
+    "main": null,
+    "origin": "main",
+    "sign-up": "main"
+  },
+  "order": [
+    "main",
+    "develop",
+    "origin",
+    "sign-up"
+  ]
+}
