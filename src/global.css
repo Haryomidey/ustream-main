@@ -1,0 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+}
+
+.open-sans{
+    font-family: "Open Sans", sans-serif;
+}
+
+:root{
+    --linear-gradient: linear-gradient(103.36deg, #FF0606 -30.27%, #333333 -21.73%, #FF0606 72.24%, #FFFFFF 96.09%);
+}
+
+body{
+    border-color: #d9d9d9;
+    color: #102136;
+}
+
+*::-webkit-scrollbar{
+    width: 5px;
+    height: 5px;
+    border-radius: 10px;
+}
+
+*::-webkit-scrollbar-thumb{
+    border-radius: 10px;
+    background-color: #adacab;
+    cursor: pointer;
+}
+
+.gradient{
+    background: var(--linear-gradient);;
+}
+
+button, input, textarea, select{
+    outline: none;
+}
+
+.button{
+    border-radius: 30px;
+    background: var(--linear-gradient);
+    color: white;
+    transition: all 0.5s ease;
+}
+
+.gradient-text {
+    background: linear-gradient(to right, #ff0707, #ffe4e4);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+
+.c-shadow{
+    box-shadow: 0 0 15px #eae4e420;
+}
+
+.b-shadow{
+    box-shadow: 0 0 10px #0000002d;
+}
+
+.header-shadow{
+    box-shadow: 0 5px 10px #d6d6d631;
+}
+
+.spin{
+    animation: spin 0.5s linear 0s infinite;
+}
+
+@keyframes spin{
+    100%{
+        transform: rotate(360deg);
+    }
+}
+
+.scroll-bar-hide::-webkit-scrollbar{
+    display: none;
+    width: 0;
+    height: 0;
+}
