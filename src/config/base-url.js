@@ -1,0 +1,1 @@
+export const baseUrl = 'https://ustreamweb3-backend.onrender.com/api/'
