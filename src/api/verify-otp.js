@@ -44,14 +44,13 @@ const VerifyOtp = (email) => {
             
 
             try {
-                const res = await fetch(`${baseUrl}auth/verify-otp`, {
+                const res = await fetch(`${baseUrl}auth/verify-otp?username=${encodeURIComponent(formData.username)}`, {  
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        email,
-                        otp: formData.otp,
+                        otp: formData.otp,  
                     }),
                 });
 
