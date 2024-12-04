@@ -52,6 +52,7 @@ const SignUp = () => {
         return valid;
     };
 
+   
     const handleChangeSignUp = (e) => {
         const { name, value } = e.target;
         setFormData(prevState => ({
@@ -60,13 +61,20 @@ const SignUp = () => {
         }));
     };
 
+   
     const handleSubmitSignUp = async (e) => {
-        console.log(errors);
         e.preventDefault();
+      
+        console.log("Errors before submission:", errors);
+
+       
         if (validateForm()) {
             setLoading(true);
             try {
-                const res = await fetch(`${baseUrl}auth/register`, {
+                console.log("Sending data to backend:", formData);
+
+                
+                const res = await fetch(`${baseUrl}api/auth/register`, {
                     method: "POST",
                     headers: {
                         'Content-type': 'application/json'
@@ -74,36 +82,48 @@ const SignUp = () => {
                     body: JSON.stringify(formData)
                 });
 
-                const data = await res.json();
-                console.log(res);
-                if (res.ok) {
-                    if (data && data.status === true) {
-                        Cookies.set('email', formData.email, { expires: 5 / (24 * 60) });
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Registration Successful',
-                            html: data.message,
-                            timer: 4000
-                        });
-                        router('/verify-otp');
-                    }
+               
+                let data;
+                const contentType = res.headers.get('Content-Type');
+                if (contentType && contentType.includes('application/json')) {
+                    data = await res.json();
+                    console.log("Response JSON:", data);
                 } else {
+                    data = { message: await res.text() }; 
+                    console.log("Response (non-JSON):", data);
+                }
+
+              
+                if (res.ok && (data.status === true || data.message === 'User registered successfully')) {
+                    Cookies.set('email', formData.email, { expires: 5 / (24 * 60) }); 
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Registration Successful',
+                        html: data.message,
+                        timer: 4000
+                    });
+                    console.log("Registration successful:", data.message);
+                    router(`/verify-otp?username=${encodeURIComponent(formData.username)}`); 
+                } else {
+                    
                     Swal.fire({
                         icon: 'error',
                         title: 'Registration Error',
-                        html: data.message
+                        html: data.message || 'An error occurred, please try again.'
                     });
-
-                    setErrors(data.message);
+                    console.error("Registration failed:", data.message);
+                    setErrors(data.message || 'Registration failed.');
                 }
             } catch (error) {
+                
                 Swal.fire({
                     icon: 'error',
                     title: 'Registration Error',
                     text: 'Something went wrong. Please try again later.'
                 });
+                console.error("Unexpected error:", error);
             } finally {
-                setLoading(false);
+                setLoading(false); 
             }
         }
     };
