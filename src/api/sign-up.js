@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { baseUrl } from '../config/base-url';
+import axios from 'axios';
 import Swal from 'sweetalert2';
 import Cookies from 'js-cookie';
 
 const SignUp = () => {
-    const router = useNavigate();
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
@@ -16,125 +16,116 @@ const SignUp = () => {
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
 
+    // Form validation
     const validateForm = () => {
         let valid = true;
-        let newError = {};
+        const newErrors = {};
 
-        if (formData.firstName.trim() === '') {
-            newError.firstName = 'First name is required';
+        if (!formData.firstName.trim()) {
+            newErrors.firstName = 'First name is required';
             valid = false;
         }
-
-        if (formData.lastName.trim() === '') {
-            newError.lastName = 'Last name is required';
+        if (!formData.lastName.trim()) {
+            newErrors.lastName = 'Last name is required';
             valid = false;
         }
-
-        if (formData.username.trim() === '') {
-            newError.username = 'Username is required';
+        if (!formData.username.trim()) {
+            newErrors.username = 'Username is required';
             valid = false;
         }
-
-        if (formData.email.trim() === '') {
-            newError.email = 'Email is required';
+        if (!formData.email.trim()) {
+            newErrors.email = 'Email is required';
             valid = false;
         }
-
-        if (formData.password.trim() === '') {
-            newError.password = 'Password is required';
+        if (!formData.password.trim()) {
+            newErrors.password = 'Password is required';
             valid = false;
         } else if (formData.password.length < 6) {
-            newError.password = 'Password must be at least 6 characters';
+            newErrors.password = 'Password must be at least 6 characters';
             valid = false;
         }
 
-        setErrors(newError);
+        setErrors(newErrors);
         return valid;
     };
 
-   
+    // Handle input changes
     const handleChangeSignUp = (e) => {
         const { name, value } = e.target;
-        setFormData(prevState => ({
+        setFormData((prevState) => ({
             ...prevState,
-            [name]: value
+            [name]: value,
         }));
     };
 
-   
     const handleSubmitSignUp = async (e) => {
         e.preventDefault();
-      
-        console.log("Errors before submission:", errors);
-
-       
-        if (validateForm()) {
-            setLoading(true);
-            try {
-                console.log("Sending data to backend:", formData);
-
-                
-                const res = await fetch(`${baseUrl}api/auth/register`, {
-                    method: "POST",
-                    headers: {
-                        'Content-type': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
-                });
-
+    
+        if (!validateForm()) {
+            return;
+        }
+    
+        setLoading(true);
+        try {
+            const response = await axios.post(
+                'http://localhost:8070/api/auth/register',
+                formData,
+                {
+                    headers: { 'Content-Type': 'application/json' },
+                }
+            );
+    
+            const data = response.data;
+            console.log('Response from backend:', data); 
+          
+            if (data.statusCode === "201") { 
                
-                let data;
-                const contentType = res.headers.get('Content-Type');
-                if (contentType && contentType.includes('application/json')) {
-                    data = await res.json();
-                    console.log("Response JSON:", data);
-                } else {
-                    data = { message: await res.text() }; 
-                    console.log("Response (non-JSON):", data);
-                }
+                Cookies.set('email', formData.email, { expires: 1 / 24 });
+                Cookies.set('username', formData.username, { expires: 1 / 24 }); 
+                
+                const username = Cookies.get('username');
+                console.log("Username retrieved from cookies:", username);
+    
 
-              
-                if (res.ok && (data.status === true || data.message === 'User registered successfully')) {
-                    Cookies.set('email', formData.email, { expires: 5 / (24 * 60) }); 
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Registration Successful',
-                        html: data.message,
-                        timer: 4000
-                    });
-                    console.log("Registration successful:", data.message);
-                    router(`/verify-otp?username=${encodeURIComponent(formData.username)}`); 
-                } else {
-                    
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Registration Error',
-                        html: data.message || 'An error occurred, please try again.'
-                    });
-                    console.error("Registration failed:", data.message);
-                    setErrors(data.message || 'Registration failed.');
-                }
-            } catch (error) {
                 
                 Swal.fire({
-                    icon: 'error',
-                    title: 'Registration Error',
-                    text: 'Something went wrong. Please try again later.'
+                    icon: 'success',
+                    title: 'Registration Successful',
+                    text: data.statusMsg || 'You have been registered successfully.',
+                    timer: 4000,
                 });
-                console.error("Unexpected error:", error);
-            } finally {
-                setLoading(false); 
+    
+                navigate('/verify-otp');
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Registration Failed',
+                    text: data.statusMsg || 'An unexpected error occurred. Please try again.',
+                });
             }
+        } catch (error) {
+            const errorMessage =
+                error.response?.data?.statusMsg || 'An error occurred. Please try again.';
+            Swal.fire({
+                icon: 'error',
+                title: 'Registration Error',
+                text: errorMessage,
+            });
+            console.error('Error during registration:', error.response?.data || error.message);
+        } finally {
+            setLoading(false);
         }
     };
+    
 
     return {
         handleChangeSignUp,
         formData,
         handleSubmitSignUp,
         loading,
-        errors
+        errors,
     };
 };
 
 export default SignUp;
+
