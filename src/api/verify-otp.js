@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { baseUrl } from '../config/base-url';
 import Swal from 'sweetalert2';
 import Cookies from 'js-cookie';
+import axios from 'axios';
 
-const VerifyOtp = (email) => {
-    const router = useNavigate();
+const VerifyOtp = () => {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         otp: '',
     });
@@ -14,9 +14,9 @@ const VerifyOtp = (email) => {
 
     const validateForm = () => {
         let valid = true;
-        let newError = {};
+        const newError = {};
 
-        if (formData.otp === '') {
+        if (formData.otp.trim() === '') {
             newError.otp = 'OTP is required';
             valid = false;
         } else if (formData.otp.length !== 6) {
@@ -41,53 +41,73 @@ const VerifyOtp = (email) => {
 
         if (validateForm()) {
             setLoading(true);
-            
 
-            try {
-                const res = await fetch(`${baseUrl}auth/verify-otp?username=${encodeURIComponent(formData.username)}`, {  
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        otp: formData.otp,  
-                    }),
-                });
+            const username = Cookies.get('username');
+            console.log("Username retrieved from cookies:", username);
 
-                const data = await res.json();
-                if (res.ok) {
-                    if (data.status === true) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'OTP Verified',
-                            html: data.message,
-                            timer: 4000,
-                        });
-                        Cookies.remove('email');
-                        router('/login');
-                    }
-                } else {
-                    let errorMessages = '';
-                    if (data.errors) {
-                        data.errors.forEach((error) => {
-                            errorMessages += `${error.msg}<br>`;
-                        });
-                    }
-
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Verification Error',
-                        html: errorMessages,
-                    });
-
-                    setErrors(data.errors);
-                }
-            } catch (error) {
+            if (!username) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Verification Error',
-                    text: 'Something went wrong. Please try again later.',
+                    text: 'Username is missing. Please log in again.',
                 });
+                setLoading(false);
+                return;
+            }
+
+            try {
+                console.log("Making POST request...");
+
+                const response = await axios.post(
+                    `http://localhost:8070/api/email/verify-otp?username=${encodeURIComponent(username)}`,
+                    { otp: formData.otp },
+                    {
+                        headers: { 'Content-Type': 'application/json' },
+                    }
+                );
+
+                console.log("API response:", response.data);
+
+                if (response.data.statusCode === "200") {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'OTP Verified',
+                        text: response.data.statusMsg || 'Verification successful!',
+                        timer: 4000,
+                    });
+                    navigate('/login');
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Verification Error',
+                        text: response.data.statusMsg || 'Verification failed. Please try again.',
+                    });
+                }
+            } catch (error) {
+                console.error("API error:", error);
+
+                if (error.response) {
+                    console.error("Error Response:", error.response);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Verification Error',
+                        text: error.response.data?.statusMsg || 'Something went wrong. Please try again later.',
+                    });
+                } else if (error.request) {
+                    console.error("No response from backend. Error Request:", error.request);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Verification Error',
+                        text: 'No response from the server. Please check the server connection.',
+                    });
+                } else {
+                    console.error("Error setting up the request:", error.message);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Verification Error',
+                        text: 'An error occurred while making the request.',
+                    });
+                }
             } finally {
                 setLoading(false);
             }
